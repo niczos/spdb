@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>Interactive Map</title>
+	<link rel="stylesheet" href="node_modules/leaflet/dist/leaflet.css" />
+	<script src="node_modules/leaflet/dist/leaflet.js"></script>
+	<style>
+		#map {
+			height: 600px;
+			width: 60%;
+		}
+	</style>
+</head>
+<body>
+	<div id="map"></div>
+	<form>
+		<label for="sourceLatitude">Source Latitude:</label>
+		<input type="text" id="sourceLatitude" name="sourceLatitude" readonly>
+	
+		<label for="sourceLongitude">Source Longitude:</label>
+		<input type="text" id="sourceLongitude" name="sourceLongitude" readonly>
+	
+		<label for="destinationLatitude">Destination Latitude:</label>
+		<input type="text" id="destinationLatitude" name="destinationLatitude" readonly>
+	
+		<label for="destinationLongitude">Destination Longitude:</label>
+		<input type="text" id="destinationLongitude" name="destinationLongitude" readonly>
+	
+		<label for="speedLimit">Speed Limit (numbers only):</label>
+		<input type="number" id="speedLimit" name="speedLimit">
+
+		<input type="submit" value="Submit Route">
+	</form>
+	<script>
+		const map = L.map('map', {
+			center: [52, 19],
+			zoom: 6
+		});
+		
+		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+			maxZoom: 18
+		}).addTo(map);
+
+		let sourceMarker = null;
+		let destinationMarker = null;
+		let isSourceSet = false;
+
+		const sourceLatitudeInput = document.getElementById('sourceLatitude');
+		const sourceLongitudeInput = document.getElementById('sourceLongitude');
+		const destinationLatitudeInput = document.getElementById('destinationLatitude');
+		const destinationLongitudeInput = document.getElementById('destinationLongitude');
+		const speedLimitInput = document.getElementById('speedLimit');
+
+		map.on('click', function (e) {
+			if (!isSourceSet) {
+				if (sourceMarker) {
+					map.removeLayer(sourceMarker);
+				}
+				sourceMarker = L.marker(e.latlng).addTo(map);
+				alert("Source set at latitude: " + e.latlng.lat + ", longitude: " + e.latlng.lng);
+				sourceLat = e.latlng.lat;
+				sourceLng = e.latlng.lng;
+
+				sourceLatitudeInput.setAttribute('value', e.latlng.lat);
+            	sourceLongitudeInput.setAttribute('value', e.latlng.lng);
+
+				isSourceSet = true;
+			} else {
+				if (destinationMarker) {
+					map.removeLayer(destinationMarker);
+				}
+				destinationMarker = L.marker(e.latlng).addTo(map);
+				alert("Destination set at latitude: " + e.latlng.lat + ", longitude: " + e.latlng.lng);
+				destinationLat = e.latlng.lat;
+				destinationLng = e.latlng.lng;
+
+				destinationLatitudeInput.setAttribute('value', e.latlng.lat);
+            	destinationLongitudeInput.setAttribute('value', e.latlng.lng);
+
+				isSourceSet = false;
+			}
+		});
+	</script>
+</body>
+</html>
