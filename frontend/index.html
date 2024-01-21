@@ -5,6 +5,7 @@
 	<title>Interactive Map</title>
 	<link rel="stylesheet" href="node_modules/leaflet/dist/leaflet.css" />
 	<script src="node_modules/leaflet/dist/leaflet.js"></script>
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDwykCGz1eLwNOJ-u_5b4B7f_gjO8AH_34&libraries=places"></script>
 	<style>
 		#map {
 			height: 600px;
@@ -15,6 +16,10 @@
 <body>
 	<div id="map"></div>
 	<form>
+		<label for="address">Address:</label>
+		<input type="text" id="address" name="address">
+		<button type="button" onclick="geocodeAddress()">Geocode</button>
+
 		<label for="sourceLatitude">Source Latitude:</label>
 		<input type="text" id="sourceLatitude" name="sourceLatitude" readonly>
 	
@@ -52,6 +57,26 @@
 		const destinationLatitudeInput = document.getElementById('destinationLatitude');
 		const destinationLongitudeInput = document.getElementById('destinationLongitude');
 		const speedLimitInput = document.getElementById('speedLimit');
+
+		function geocodeAddress() {
+			const address = document.getElementById('address').value;
+			const geocoder = new google.maps.Geocoder();
+
+			geocoder.geocode({ address }, (results, status) => {
+				if (status === google.maps.GeocoderStatus.OK) {
+					const location = results[0].geometry.location;
+					const lat = location.lat();
+					const lng = location.lng();
+
+					console.log('Geocoding result:', results[0]);
+
+					sourceLatitudeInput.value = lat;
+					sourceLongitudeInput.value = lng;
+				} else {
+					console.error('Geocoding error:', status);
+				}
+			});
+		}
 
 		map.on('click', function (e) {
 			if (!isSourceSet) {
