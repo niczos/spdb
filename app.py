@@ -9,7 +9,7 @@ def get_route():
     cursor = conn.cursor()
 
     try:
-        query = "SELECT * FROM ...;"
+        query = "SELECT * FROM ways limit 10;"
         cursor.execute(query)
 
         result = cursor.fetchall()
