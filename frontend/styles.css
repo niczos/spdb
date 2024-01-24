@@ -24,3 +24,12 @@
     background-color: black;
     border-color: black;
 }
+
+.route-info {
+    font-size: 18px;
+    margin-top: 10px;
+}
+
+.route-info-header {
+    font-weight: bold;
+}

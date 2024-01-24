@@ -21,12 +21,19 @@
 		</div>
 		<div class="row">
 			<div class="col-md-6">
-				<div id="map"></div>
+				<div class="row">
+					<div id="map"></div>
+				</div>
+				<div class="row route-info">
+					<p id="routeInfo" class="route-info-header"></p>
+					<p id="distance"></p>
+					<p id="estimatedTime"></p>
+				</div>
 			</div>
 			<div class="col-md-4">
 				<form onsubmit="submitForm(event)">
 					<div class="form-group">
-						<label for="address1">Address 1:</label>
+						<label for="address1">Source address:</label>
 						<div class="input-group">
 							<input type="text" id="address1" name="address1" class="form-control">
 							<div class="input-group-append">
@@ -45,7 +52,7 @@
 					</div>
 
 					<div class="form-group">
-						<label for="address2">Address 2:</label>
+						<label for="address2">Destination address:</label>
 						<div class="input-group">
 							<input type="text" id="address2" name="address2" class="form-control">
 							<div class="input-group-append">
@@ -66,7 +73,7 @@
 					<div class="row">
 						<div class="col-md-6">
 							<div class="form-group">
-								<label for="speedLimit">Max Speed:</label>
+								<label for="speedLimit">Max Speed (km/h):</label>
 								<input type="number" id="speedLimit" name="speedLimit" class="form-control">
 							</div>
 						</div>
@@ -78,12 +85,13 @@
 						</div>
 					</div>
 
-					<div class="form-group text-center">
+					<div class="form-group">
 						<button type="submit" class="btn btn-primary" id="submitButton">Submit Route</button>
-						<p id="errorMessage" style="color: red;"></p>
 						<div class="spinner-border" role="status" id="loadingSpinner" style="display: none;">
 							<span class="visually-hidden">Loading...</span>
 						</div>
+						<button type="button" class="btn btn-secondary" id="clearButton">Clear</button>
+						<p id="errorMessage" style="color: red;"></p>
 					</div>
 				</form>
 			</div>
@@ -103,6 +111,7 @@
 		let sourceMarker = null;
 		let destinationMarker = null;
 		let isSourceSet = false;
+		let polyline;
 
 		const sourceLatitudeInput = document.getElementById('sourceLatitude');
 		const sourceLongitudeInput = document.getElementById('sourceLongitude');
@@ -110,6 +119,8 @@
 		const destinationLongitudeInput = document.getElementById('destinationLongitude');
 		const speedLimitInput = document.getElementById('speedLimit');
 		const heuristicInput = document.getElementById('heuristic');
+
+		document.getElementById('clearButton').addEventListener('click', clearForm);
 
 		function geocodeAddress(inputId, markerType) {
 			const addressInput = document.getElementById(inputId);
@@ -131,27 +142,75 @@
 					console.log(`Geocoding result for ${inputId}:`, results[0]);
 
 					if (markerType === 'source') {
-						sourceLatitudeInput.value = lat;
-						sourceLongitudeInput.value = lng;
+						sourceLatitudeInput.setAttribute('value', lat);
+            			sourceLongitudeInput.setAttribute('value', lng);
 						if (sourceMarker) {
 							map.removeLayer(sourceMarker);
 						}
 						sourceMarker = L.marker([lat, lng], { icon: createPin('blue') }).addTo(map);
 					} else if (markerType === 'destination') {
-						destinationLatitudeInput.value = lat;
-						destinationLongitudeInput.value = lng;
+						destinationLatitudeInput.setAttribute('value', lat);
+						destinationLongitudeInput.setAttribute('value', lng);
 						if (destinationMarker) {
 							map.removeLayer(destinationMarker);
 						}
 						destinationMarker = L.marker([lat, lng], { icon: createPin('red') }).addTo(map);
 					}
 
-					isSourceSet = (markerType === 'source');
 				} else {
 					console.error(`Geocoding error for ${inputId}:`, status);
 					alert(`Geocoding error for ${inputId}: ${status}`);
 				}
 			});
+		}
+
+		function drawRoute(segments, distance, estimated_time) {
+			if (polyline) {
+				map.removeLayer(polyline);
+			}
+
+			const coordinates = segments.flatMap(segment => [
+				[segment.coordinates[0].latitude, segment.coordinates[0].longitude],
+				[segment.coordinates[1].latitude, segment.coordinates[1].longitude],
+			]);
+
+			polyline = L.polyline(coordinates, { color: 'black' }).addTo(map);
+
+			// Display distance and estimated time
+			const distanceElement = document.getElementById('distance');
+			const estimatedTimeElement = document.getElementById('estimatedTime');
+			const routeInfoElement = document.getElementById('routeInfo');
+			distanceElement.textContent = `Distance: ${distance.toFixed(2)} km`;
+			estimatedTimeElement.textContent = `Estimated Time: ${estimated_time.toFixed(2)} hours`;
+			routeInfoElement.textContent = "Route info:";
+
+			map.fitBounds(polyline.getBounds());
+		}
+
+		function clearMap() {
+			if (sourceMarker) {
+				map.removeLayer(sourceMarker);
+			}
+			if (destinationMarker) {
+				map.removeLayer(destinationMarker);
+			}
+			if (polyline) {
+				map.removeLayer(polyline);
+			}
+
+			const distanceElement = document.getElementById('distance');
+			const estimatedTimeElement = document.getElementById('estimatedTime');
+			const routeInfoElement = document.getElementById('routeInfo');
+			distanceElement.textContent = '';
+			estimatedTimeElement.textContent = '';
+			routeInfoElement.textContent = '';
+
+			sourceLatitudeInput.setAttribute('value', '');
+			sourceLongitudeInput.setAttribute('value', '');
+			destinationLatitudeInput.setAttribute('value', '');
+			destinationLongitudeInput.setAttribute('value', '');
+			speedLimitInput.setAttribute('value', '');
+			heuristicInput.setAttribute('value', '');
 		}
 
 		function createPin(color) {
@@ -177,11 +236,19 @@
 			const sourceLng = sourceLongitudeInput.value.trim();
 			const destinationLat = destinationLatitudeInput.value.trim();
 			const destinationLng = destinationLongitudeInput.value.trim();
+			const speedLimit = speedLimitInput.value.trim();
 
 			errorMessage.textContent = '';
 
 			if (sourceLat === '' || sourceLng === '' || destinationLat === '' || destinationLng === '') {
-				errorMessage.textContent = 'Please set source and destination!.';
+				errorMessage.textContent = 'Please set source and destination!';
+				loadingSpinner.style.display = 'none';
+				submitButton.style.display = 'block';
+				return;
+			}
+
+			if (speedLimit === '' || speedLimit < 1 || speedLimit > 140) {
+				errorMessage.textContent = 'Invalid speed limit - please insert a number from 1 to 140.';
 				loadingSpinner.style.display = 'none';
 				submitButton.style.display = 'block';
 				return;
@@ -208,6 +275,7 @@
 			.then(response => response.json())
 			.then(data => {
 				console.log('Server response:', data);
+				drawRoute(data.route.segments, data.route.distance, data.route.estimated_time);
 			})
 			.catch(error => {
 				console.error('Error sending data to server:', error);
@@ -216,6 +284,11 @@
 				loadingSpinner.style.display = 'none';
 				submitButton.style.display = 'block';
 			});
+		}
+
+		function clearForm(event) {
+			event.preventDefault();
+			clearMap();
 		}
 		
 		map.on('click', function (e) {

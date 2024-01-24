@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from db_connector import connect, close_connection
-from db_service import DatabaseService, Point
+from db_service import DatabaseService, Point, Route
 
 app = Flask(__name__)
 CORS(app, resources={r"/get_route": {"origins": "*"}})
@@ -27,23 +27,23 @@ def get_route():
 
         route = data_service.find_route(start_id, end_id, max_speed, heuristic)
 
-        # return jsonify({
-        #     'route': {
-        #         'segments': [
-        #             {
-        #                 'id': segment.id,
-        #                 'length': segment.length,
-        #                 'max_speed_forward': segment.max_speed_forward,
-        #                 'coordinates': [
-        #                     {'latitude': segment.y1, 'longitude': segment.x1},
-        #                     {'latitude': segment.y2, 'longitude': segment.x2},
-        #                 ]
-        #             } for segment in route.segments
-        #         ],
-        #         'distance': route.distance,
-        #         'estimated_time': route.estimated_time
-        #     }
-        # })
+        return jsonify({
+            'route': {
+                'segments': [
+                    {
+                        'id': segment.id,
+                        'length': segment.length,
+                        'max_speed_forward': segment.max_speed_forward,
+                        'coordinates': [
+                            {'latitude': segment.y1, 'longitude': segment.x1},
+                            {'latitude': segment.y2, 'longitude': segment.x2},
+                        ]
+                    } for segment in route.segments
+                ],
+                'distance': route.distance,
+                'estimated_time': route.estimated_time
+            }
+        })
 
         return jsonify(request_data)
 

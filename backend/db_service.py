@@ -49,23 +49,27 @@ class Route:
 
 
 class RouteSegment:
-    def __init__(self, id, geom, source, target, length, max_speed_forward, x1, y1, x2, y2):
+    def __init__(self, id, geom, source, target, length, max_speed_forward, max_speed_backward, x1, y1, x2, y2):
         self.id = id
         self.geom = geom
         self.source = source
         self.target = target
         self.length = length
         self.max_speed_forward = max_speed_forward
+        self.max_speed_backward = max_speed_backward
         self.x1 = x1
         self.y1 = y1
         self.x2 = x2
         self.y2 = y2
 
-    def length(self):
+    def get_length(self):
         return self.length
 
-    def max_speed_forward(self):
+    def get_max_speed_forward(self):
         return self.max_speed_forward
+    
+    def get_max_speed_backward(self):
+        return self.max_speed_backward
 
 
 class DatabaseService:
@@ -74,7 +78,8 @@ class DatabaseService:
 
     NEAREST_START_ID_SQL = "SELECT source FROM ways " + "ORDER BY ST_DISTANCE(ST_MAKEPOINT(%s, %s), ST_MAKEPOINT(y1, x1)) LIMIT 1;"
     NEAREST_END_ID_SQL = "SELECT source FROM ways " + "ORDER BY ST_DISTANCE(ST_MAKEPOINT(%s, %s), ST_MAKEPOINT(y2, x2)) LIMIT 1;"
-    FIND_ROUTE_TIME_SQL = "SELECT w.gid, w.the_geom, w.source, w.target, w.length_m, w.maxspeed_forward, " + "w.maxspeed_backward, w.x1, w.y1, w.x2, w.y2 " + "FROM astar_time(%s, %s, %s, %s) res JOIN ways w ON res.edge=w.gid;"
+    FIND_ROUTE_TIME_SQL = "SELECT w.gid, w.the_geom, w.source, w.target, w.length_km, w.maxspeed_forward, w.maxspeed_backward, w.x1, w.y1, w.x2, w.y2 " + "FROM astar_time(%s, %s, %s, %s) res JOIN ways w ON res.edge=w.gid;"
+    FIND_ROUTE_LENGTH_SQL = "SELECT w.gid, w.the_geom, w.source, w.target, w.length_km, w.maxspeed_forward, w.maxspeed_backward, w.x1, w.y1, w.x2, w.y2 " + "FROM astar_length(%s, %s, %s) res JOIN ways w ON res.edge=w.gid;"
 
     def get_connection(self):
         conn = connect()
@@ -104,7 +109,7 @@ class DatabaseService:
                 cursor.execute(self.FIND_ROUTE_TIME_SQL, (start_id, end_id, max_speed, heuristic))
                 result = cursor.fetchall()
 
-                return self.parse_query_result(result, max_speed)
+                return self.parse_query_result(result, int(max_speed))
 
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -112,8 +117,8 @@ class DatabaseService:
 
     @staticmethod
     def parse_record(record):
-        id, geom, source, target, length, max_speed_forward, x1, y1, x2, y2 = record
-        return RouteSegment(id, geom, source, target, length / 1000, max_speed_forward, x1, y1, x2, y2)
+        id, geom, source, target, length, max_speed_forward, max_speed_backward, x1, y1, x2, y2 = record
+        return RouteSegment(id, geom, source, target, length, max_speed_forward, max_speed_backward, x1, y1, x2, y2)
 
     def parse_query_result(self, result, max_speed):
         segments = []
@@ -122,10 +127,9 @@ class DatabaseService:
 
         for record in result:
             segment = self.parse_record(record)
-            distance_sum += segment.length()
-            time_sum += segment.length() / min(segment.max_speed_forward(), max_speed)
+            distance_sum += segment.get_length()
+            time_sum += segment.get_length() / min(segment.get_max_speed_forward(), max_speed)
             segments.append(segment)
 
-        print(f"Segments number: {len(segments)}")
         return Route(segments, distance_sum, time_sum)
 
