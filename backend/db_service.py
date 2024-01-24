@@ -74,7 +74,7 @@ class DatabaseService:
 
     NEAREST_START_ID_SQL = "SELECT source FROM ways " + "ORDER BY ST_DISTANCE(ST_MAKEPOINT(%s, %s), ST_MAKEPOINT(y1, x1)) LIMIT 1;"
     NEAREST_END_ID_SQL = "SELECT source FROM ways " + "ORDER BY ST_DISTANCE(ST_MAKEPOINT(%s, %s), ST_MAKEPOINT(y2, x2)) LIMIT 1;"
-    FIND_ROUTE_SQL = "SELECT w.gid, w.the_geom, w.source, w.target, w.length_m, w.maxspeed_forward, " + "w.maxspeed_backward, w.x1, w.y1, w.x2, w.y2 " + "FROM astar(%s, %s, %s, %s, 0) res JOIN ways w ON res.edge=w.gid;"
+    FIND_ROUTE_TIME_SQL = "SELECT w.gid, w.the_geom, w.source, w.target, w.length_m, w.maxspeed_forward, " + "w.maxspeed_backward, w.x1, w.y1, w.x2, w.y2 " + "FROM astar_time(%s, %s, %s, %s) res JOIN ways w ON res.edge=w.gid;"
 
     def get_connection(self):
         conn = connect()
@@ -97,11 +97,11 @@ class DatabaseService:
             print(f"An error occurred: {e}")
             raise
 
-    def find_route(self, start_id, end_id, max_speed, distance_weight):
+    def find_route(self, start_id, end_id, max_speed, heuristic):
         try:
             with self.get_connection() as connection:
                 cursor = connection.cursor()
-                cursor.execute(self.FIND_ROUTE_SQL, (start_id, end_id, max_speed, distance_weight))
+                cursor.execute(self.FIND_ROUTE_TIME_SQL, (start_id, end_id, max_speed, heuristic))
                 result = cursor.fetchall()
 
                 return self.parse_query_result(result, max_speed)

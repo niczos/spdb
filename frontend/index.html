@@ -72,8 +72,8 @@
 						</div>
 						<div class="col-md-6">
 							<div class="form-group">
-								<label for="distanceWeight">Distance weight:</label>
-								<input type="number" id="distanceWeight" name="distanceWeight" class="form-control">
+								<label for="heuristic">Heuristic (0-5):</label>
+								<input type="number" id="heuristic" name="heuristic" class="form-control">
 							</div>
 						</div>
 					</div>
@@ -106,7 +106,7 @@
 		const destinationLatitudeInput = document.getElementById('destinationLatitude');
 		const destinationLongitudeInput = document.getElementById('destinationLongitude');
 		const speedLimitInput = document.getElementById('speedLimit');
-		const distanceWeightInput = document.getElementById('distanceWeight');
+		const heuristicInput = document.getElementById('heuristic');
 
 		function geocodeAddress(inputId, markerType) {
 			const addressInput = document.getElementById(inputId);
@@ -181,7 +181,7 @@
 				destinationLatitude: destinationLatitudeInput.value,
 				destinationLongitude: destinationLongitudeInput.value,
 				speedLimit: speedLimitInput.value,
-				distanceWeight: distanceWeightInput.value
+				heuristic: heuristicInput.value
 			};
 
 			const queryParams = new URLSearchParams(formData);

@@ -20,12 +20,12 @@ def get_route():
         destination_longitude = request_data.get('destinationLongitude')
         end_point = Point(destination_latitude, destination_longitude)
         max_speed = request_data.get('speedLimit', 140) # default if not defined
-        distance_weight = request_data.get('distanceWeight', 5) # default if not defined
+        heuristic = request_data.get('heuristic', 0) # default if not defined
 
         start_id = data_service.get_start_or_end(start_point, is_start_point=True)
         end_id = data_service.get_start_or_end(end_point, is_start_point=False)
 
-        route = data_service.find_route(start_id, end_id, max_speed, distance_weight)
+        route = data_service.find_route(start_id, end_id, max_speed, heuristic)
 
         # return jsonify({
         #     'route': {
