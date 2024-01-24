@@ -65,13 +65,9 @@ class DatabaseServiceImpl:
         self.DB_USERNAME = db_username
         self.DB_PASSWORD = db_password
 
-    NEAREST_START_ID_SQL = "SELECT source FROM ways " +
-                           "order by st_distance(st_makepoint(?,?), st_makepoint(y1,x1)) limit 1;"
-    NEAREST_END_ID_SQL = "SELECT source FROM ways " +
-                         "order by st_distance(st_makepoint(?,?), st_makepoint(y2,x2)) limit 1;"
-    FIND_ROUTE_SQL = "SELECT w.gid, w.the_geom, w.source, w.target, w.length_m, w.maxspeed_forward, " +
-                    "w.maxspeed_backward, w.x1, w.y1, w.x2, w.y2 " +
-                    "FROM astar(?, ?, ?, ?, 0) res join ways w on res.edge=w.gid;"
+    NEAREST_START_ID_SQL = "SELECT source FROM ways " + "order by st_distance(st_makepoint(?,?), st_makepoint(y1,x1)) limit 1;"
+    NEAREST_END_ID_SQL = "SELECT source FROM ways " + "order by st_distance(st_makepoint(?,?), st_makepoint(y2,x2)) limit 1;"
+    FIND_ROUTE_SQL = "SELECT w.gid, w.the_geom, w.source, w.target, w.length_m, w.maxspeed_forward, " + "w.maxspeed_backward, w.x1, w.y1, w.x2, w.y2 " + "FROM astar(?, ?, ?, ?, 0) res join ways w on res.edge=w.gid;"
 
     def get_connection(self):
         connection = psycopg2.connect(
