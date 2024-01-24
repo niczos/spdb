@@ -19,3 +19,8 @@
     color: black;
     padding-top: 4px;
 }
+
+.btn-primary:hover {
+    background-color: black;
+    border-color: black;
+}

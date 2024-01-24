@@ -1,16 +1,25 @@
-import psycopg2
-from sothawo.mapjfx import Coordinate, CoordinateLine
+from db_connector import connect, close_connection
 
 class Point:
     def __init__(self, latitude, longitude):
         self.latitude = latitude
         self.longitude = longitude
 
-    def latitude(self):
+    def get_latitude(self):
         return self.latitude
 
-    def longitude(self):
+    def get_longitude(self):
         return self.longitude
+    
+class PointLine:
+    def __init__(self, points):
+        self.points = points
+
+    def add_point(self, point):
+        self.points.append(point)
+
+    def get_coordinates(self):
+        return [(point.get_latitude, point.get_longitude) for point in self.points]
 
 
 class Route:
@@ -29,12 +38,12 @@ class Route:
 
             for route_segment in list_iterator:
                 if is_first:
-                    coordinates.append(Coordinate(route_segment.y1(), route_segment.x1()))
+                    coordinates.append(Point(route_segment.y1(), route_segment.x1()))
                     is_first = False
 
-                coordinates.append(Coordinate(route_segment.y2(), route_segment.x2()))
+                coordinates.append(Point(route_segment.y2(), route_segment.x2()))
 
-            self.coordinate_line = CoordinateLine(coordinates)
+            self.coordinate_line = PointLine(coordinates)
 
         return self.coordinate_line
 
@@ -59,31 +68,24 @@ class RouteSegment:
         return self.max_speed_forward
 
 
-class DatabaseServiceImpl:
-    def __init__(self, db_url, db_username, db_password):
-        self.DB_URL = db_url
-        self.DB_USERNAME = db_username
-        self.DB_PASSWORD = db_password
+class DatabaseService:
+    def __init__(self):
+        pass
 
-    NEAREST_START_ID_SQL = "SELECT source FROM ways " + "order by st_distance(st_makepoint(?,?), st_makepoint(y1,x1)) limit 1;"
-    NEAREST_END_ID_SQL = "SELECT source FROM ways " + "order by st_distance(st_makepoint(?,?), st_makepoint(y2,x2)) limit 1;"
-    FIND_ROUTE_SQL = "SELECT w.gid, w.the_geom, w.source, w.target, w.length_m, w.maxspeed_forward, " + "w.maxspeed_backward, w.x1, w.y1, w.x2, w.y2 " + "FROM astar(?, ?, ?, ?, 0) res join ways w on res.edge=w.gid;"
+    NEAREST_START_ID_SQL = "SELECT source FROM ways " + "ORDER BY ST_DISTANCE(ST_MAKEPOINT(%s, %s), ST_MAKEPOINT(y1, x1)) LIMIT 1;"
+    NEAREST_END_ID_SQL = "SELECT source FROM ways " + "ORDER BY ST_DISTANCE(ST_MAKEPOINT(%s, %s), ST_MAKEPOINT(y2, x2)) LIMIT 1;"
+    FIND_ROUTE_SQL = "SELECT w.gid, w.the_geom, w.source, w.target, w.length_m, w.maxspeed_forward, " + "w.maxspeed_backward, w.x1, w.y1, w.x2, w.y2 " + "FROM astar(%s, %s, %s, %s, 0) res JOIN ways w ON res.edge=w.gid;"
 
     def get_connection(self):
-        connection = psycopg2.connect(
-            database=self.DB_URL,
-            user=self.DB_USERNAME,
-            password=self.DB_PASSWORD
-        )
-        connection.autocommit = True
-        return connection
+        conn = connect()
+        return conn
 
     def get_start_or_end(self, point, is_start_point):
         try:
             with self.get_connection() as connection:
                 cursor = connection.cursor()
                 query = self.NEAREST_START_ID_SQL if is_start_point else self.NEAREST_END_ID_SQL
-                cursor.execute(query, (point.latitude(), point.longitude()))
+                cursor.execute(query, (point.get_latitude(), point.get_longitude()))
                 result = cursor.fetchone()
 
                 if result:

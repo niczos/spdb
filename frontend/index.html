@@ -63,9 +63,19 @@
 						<input type="text" id="destinationLongitude" name="destinationLongitude" class="form-control">
 					</div>
 
-					<div class="form-group">
-						<label for="speedLimit">Max Speed:</label>
-						<input type="number" id="speedLimit" name="speedLimit" class="form-control">
+					<div class="row">
+						<div class="col-md-6">
+							<div class="form-group">
+								<label for="speedLimit">Max Speed:</label>
+								<input type="number" id="speedLimit" name="speedLimit" class="form-control">
+							</div>
+						</div>
+						<div class="col-md-6">
+							<div class="form-group">
+								<label for="distanceWeight">Distance weight:</label>
+								<input type="number" id="distanceWeight" name="distanceWeight" class="form-control">
+							</div>
+						</div>
 					</div>
 
 					<div class="form-group text-center">
@@ -96,6 +106,7 @@
 		const destinationLatitudeInput = document.getElementById('destinationLatitude');
 		const destinationLongitudeInput = document.getElementById('destinationLongitude');
 		const speedLimitInput = document.getElementById('speedLimit');
+		const distanceWeightInput = document.getElementById('distanceWeight');
 
 		function geocodeAddress(inputId, markerType) {
 			const addressInput = document.getElementById(inputId);
@@ -169,16 +180,18 @@
 				sourceLongitude: sourceLongitudeInput.value,
 				destinationLatitude: destinationLatitudeInput.value,
 				destinationLongitude: destinationLongitudeInput.value,
-				speedLimit: speedLimitInput.value
+				speedLimit: speedLimitInput.value,
+				distanceWeight: distanceWeightInput.value
 			};
 
 			const queryParams = new URLSearchParams(formData);
 
-			fetch('http://localhost:5000/get_route?${queryParams}', {
-				method: 'GET',
+			fetch('http://localhost:5000/get_route', {
+				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-				}
+				},
+				body: JSON.stringify(formData)
 			})
 			.then(response => response.json())
 			.then(data => {

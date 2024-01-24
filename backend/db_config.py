@@ -1,5 +1,5 @@
 db_config = {
-    'dbname': 'spdb',
+    'dbname': 'osm',
     'user': 'postgres',
     'password': 'postgres',
     'host': 'localhost',
