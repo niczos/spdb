@@ -1,0 +1,21 @@
+#map {
+    height: 600px;
+    width: 100%;
+}
+
+.logo {
+    max-width: 50%;
+}
+
+.form-group {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.btn-primary {
+    background-color: white;
+    border-color: black;
+    border-width: 2px;
+    color: black;
+    padding-top: 4px;
+}

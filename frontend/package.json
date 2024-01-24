@@ -9,7 +9,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.5.1",
+    "bootstrap": "^5.3.2",
+    "font-awesome": "^4.7.0",
     "leaflet": "^1.9.4",
+    "leaflet-color-markers": "^0.1.0",
     "node-geocoder": "^4.2.0"
   }
 }
