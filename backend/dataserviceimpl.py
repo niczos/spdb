@@ -1,5 +1,5 @@
 import psycopg2
-
+from sothawo.mapjfx import Coordinate, CoordinateLine
 
 class Point:
     def __init__(self, latitude, longitude):
