@@ -33,3 +33,15 @@
 .route-info-header {
     font-weight: bold;
 }
+
+#routeInfoLength {
+    color: grey;
+}
+
+#distanceLength {
+    color: grey;
+}
+
+#estimatedTimeLength {
+    color: grey;
+}

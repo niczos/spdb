@@ -25,9 +25,16 @@
 					<div id="map"></div>
 				</div>
 				<div class="row route-info">
-					<p id="routeInfo" class="route-info-header"></p>
-					<p id="distance"></p>
-					<p id="estimatedTime"></p>
+					<div class="col-md-6">
+						<p id="routeInfo" class="route-info-header"></p>
+						<p id="distance"></p>
+						<p id="estimatedTime"></p>
+					</div>
+					<div class="col-md-6">
+						<p id="routeInfoLength" class="route-info-header"></p>
+						<p id="distanceLength"></p>
+						<p id="estimatedTimeLength"></p>
+					</div>
 				</div>
 			</div>
 			<div class="col-md-4">
@@ -70,22 +77,12 @@
 						<input type="text" id="destinationLongitude" name="destinationLongitude" class="form-control">
 					</div>
 
-					<div class="row">
-						<div class="col-md-6">
-							<div class="form-group">
-								<label for="speedLimit">Max Speed (km/h):</label>
-								<input type="number" id="speedLimit" name="speedLimit" class="form-control">
-							</div>
-						</div>
-						<div class="col-md-6">
-							<div class="form-group">
-								<label for="heuristic">Heuristic (0-5):</label>
-								<input type="number" id="heuristic" name="heuristic" class="form-control">
-							</div>
-						</div>
+					<div class="form-group">
+						<label for="speedLimit">Max Speed (km/h):</label>
+						<input type="number" id="speedLimit" name="speedLimit" class="form-control">
 					</div>
 
-					<div class="form-group">
+					<div class="form-group mt-4">
 						<button type="submit" class="btn btn-primary" id="submitButton">Submit Route</button>
 						<div class="spinner-border" role="status" id="loadingSpinner" style="display: none;">
 							<span class="visually-hidden">Loading...</span>
@@ -111,14 +108,14 @@
 		let sourceMarker = null;
 		let destinationMarker = null;
 		let isSourceSet = false;
-		let polyline;
+		let polylineTime;
+		let polylineLength;
 
 		const sourceLatitudeInput = document.getElementById('sourceLatitude');
 		const sourceLongitudeInput = document.getElementById('sourceLongitude');
 		const destinationLatitudeInput = document.getElementById('destinationLatitude');
 		const destinationLongitudeInput = document.getElementById('destinationLongitude');
 		const speedLimitInput = document.getElementById('speedLimit');
-		const heuristicInput = document.getElementById('heuristic');
 
 		document.getElementById('clearButton').addEventListener('click', clearForm);
 
@@ -164,9 +161,9 @@
 			});
 		}
 
-		function drawRoute(segments, distance, estimated_time) {
-			if (polyline) {
-				map.removeLayer(polyline);
+		function drawRouteTime(segments, distance, estimated_time) {
+			if (polylineTime) {
+				map.removeLayer(polylineTime);
 			}
 
 			const coordinates = segments.flatMap(segment => [
@@ -174,17 +171,38 @@
 				[segment.coordinates[1].latitude, segment.coordinates[1].longitude],
 			]);
 
-			polyline = L.polyline(coordinates, { color: 'black' }).addTo(map);
+			polylineTime = L.polyline(coordinates, { color: 'black' }).addTo(map);
 
-			// Display distance and estimated time
 			const distanceElement = document.getElementById('distance');
 			const estimatedTimeElement = document.getElementById('estimatedTime');
 			const routeInfoElement = document.getElementById('routeInfo');
 			distanceElement.textContent = `Distance: ${distance.toFixed(2)} km`;
 			estimatedTimeElement.textContent = `Estimated Time: ${estimated_time.toFixed(2)} hours`;
-			routeInfoElement.textContent = "Route info:";
+			routeInfoElement.textContent = "Route 1 info:";
 
-			map.fitBounds(polyline.getBounds());
+			map.fitBounds(polylineTime.getBounds());
+		}
+
+		function drawRouteLength(segments, distance, estimated_time) {
+			if (polylineLength) {
+				map.removeLayer(polylineLength);
+			}
+			
+			const coordinates = segments.flatMap(segment => [
+				[segment.coordinates[0].latitude, segment.coordinates[0].longitude],
+				[segment.coordinates[1].latitude, segment.coordinates[1].longitude],
+			]);
+
+			polylineLength = L.polyline(coordinates, { color: 'grey' }).addTo(map);
+
+			const distanceElement = document.getElementById('distanceLength');
+			const estimatedTimeElement = document.getElementById('estimatedTimeLength');
+			const routeInfoElement = document.getElementById('routeInfoLength');
+			distanceElement.textContent = `Distance: ${distance.toFixed(2)} km`;
+			estimatedTimeElement.textContent = `Estimated Time: ${estimated_time.toFixed(2)} hours`;
+			routeInfoElement.textContent = "Route 2 info:";
+
+			map.fitBounds(polylineLength.getBounds());
 		}
 
 		function clearMap() {
@@ -194,8 +212,11 @@
 			if (destinationMarker) {
 				map.removeLayer(destinationMarker);
 			}
-			if (polyline) {
-				map.removeLayer(polyline);
+			if (polylineTime) {
+				map.removeLayer(polylineTime);
+			}
+			if (polylineLength) {
+				map.removeLayer(polylineLength);
 			}
 
 			const distanceElement = document.getElementById('distance');
@@ -210,7 +231,6 @@
 			destinationLatitudeInput.setAttribute('value', '');
 			destinationLongitudeInput.setAttribute('value', '');
 			speedLimitInput.setAttribute('value', '');
-			heuristicInput.setAttribute('value', '');
 		}
 
 		function createPin(color) {
@@ -247,6 +267,13 @@
 				return;
 			}
 
+			if (!isInPoland(sourceLat, sourceLng) || !isInPoland(destinationLat, destinationLng)) {
+				errorMessage.textContent = 'Source and destination must be located in Poland!';
+				loadingSpinner.style.display = 'none';
+				submitButton.style.display = 'block';
+				return;
+			}
+
 			if (speedLimit === '' || speedLimit < 1 || speedLimit > 140) {
 				errorMessage.textContent = 'Invalid speed limit - please insert a number from 1 to 140.';
 				loadingSpinner.style.display = 'none';
@@ -260,7 +287,6 @@
 				destinationLatitude: destinationLatitudeInput.value,
 				destinationLongitude: destinationLongitudeInput.value,
 				speedLimit: speedLimitInput.value,
-				heuristic: heuristicInput.value
 			};
 
 			const queryParams = new URLSearchParams(formData);
@@ -275,7 +301,8 @@
 			.then(response => response.json())
 			.then(data => {
 				console.log('Server response:', data);
-				drawRoute(data.route.segments, data.route.distance, data.route.estimated_time);
+				drawRouteLength(data.route_length.segments, data.route_length.distance, data.route_length.estimated_time);
+				drawRouteTime(data.route_time.segments, data.route_time.distance, data.route_time.estimated_time);
 			})
 			.catch(error => {
 				console.error('Error sending data to server:', error);
@@ -289,6 +316,18 @@
 		function clearForm(event) {
 			event.preventDefault();
 			clearMap();
+		}
+
+		function isInPoland(latitude, longitude) {
+			const minLat = 49.002304;
+			const maxLat = 54.851535;
+			const minLng = 14.122970;
+			const maxLng = 24.145791;
+
+			return (
+				latitude >= minLat && latitude <= maxLat &&
+				longitude >= minLng && longitude <= maxLng
+			);
 		}
 		
 		map.on('click', function (e) {

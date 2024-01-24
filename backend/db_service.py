@@ -107,9 +107,13 @@ class DatabaseService:
             with self.get_connection() as connection:
                 cursor = connection.cursor()
                 cursor.execute(self.FIND_ROUTE_TIME_SQL, (start_id, end_id, max_speed, heuristic))
-                result = cursor.fetchall()
+                result_time = cursor.fetchall()
 
-                return self.parse_query_result(result, int(max_speed))
+                cursor = connection.cursor()
+                cursor.execute(self.FIND_ROUTE_LENGTH_SQL, (start_id, end_id, heuristic))
+                result_length = cursor.fetchall()
+
+                return self.parse_query_result(result_time, int(max_speed)), self.parse_query_result(result_length, 1000)
 
         except Exception as e:
             print(f"An error occurred: {e}")

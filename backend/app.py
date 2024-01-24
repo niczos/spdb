@@ -19,16 +19,16 @@ def get_route():
         destination_latitude = request_data.get('destinationLatitude')
         destination_longitude = request_data.get('destinationLongitude')
         end_point = Point(destination_latitude, destination_longitude)
-        max_speed = request_data.get('speedLimit', 140) # default if not defined
-        heuristic = request_data.get('heuristic', 0) # default if not defined
+        max_speed = request_data.get('speedLimit')
+        heuristic = 0
 
         start_id = data_service.get_start_or_end(start_point, is_start_point=True)
         end_id = data_service.get_start_or_end(end_point, is_start_point=False)
 
-        route = data_service.find_route(start_id, end_id, max_speed, heuristic)
+        route_time, route_length = data_service.find_route(start_id, end_id, max_speed, heuristic)
 
         return jsonify({
-            'route': {
+            'route_time': {
                 'segments': [
                     {
                         'id': segment.id,
@@ -38,10 +38,25 @@ def get_route():
                             {'latitude': segment.y1, 'longitude': segment.x1},
                             {'latitude': segment.y2, 'longitude': segment.x2},
                         ]
-                    } for segment in route.segments
+                    } for segment in route_time.segments
                 ],
-                'distance': route.distance,
-                'estimated_time': route.estimated_time
+                'distance': route_time.distance,
+                'estimated_time': route_time.estimated_time
+            },
+            'route_length': {
+                'segments': [
+                    {
+                        'id': segment.id,
+                        'length': segment.length,
+                        'max_speed_forward': segment.max_speed_forward,
+                        'coordinates': [
+                            {'latitude': segment.y1, 'longitude': segment.x1},
+                            {'latitude': segment.y2, 'longitude': segment.x2},
+                        ]
+                    } for segment in route_length.segments
+                ],
+                'distance': route_length.distance,
+                'estimated_time': route_length.estimated_time
             }
         })
 
